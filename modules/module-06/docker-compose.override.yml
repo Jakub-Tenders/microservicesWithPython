@@ -1,0 +1,6 @@
+# Module 6: Adds Keycloak for authentication
+# Services still run locally with uvicorn + SQLite.
+#
+# Start with:
+#   docker compose -f docker-compose.infra.yml up -d keycloak redis rabbitmq zookeeper kafka
+version: "3.9"

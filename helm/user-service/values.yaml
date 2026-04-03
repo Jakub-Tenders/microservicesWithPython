@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/shopmicro/user-service
+  repository: ghcr.io/gamehub/user-service
   pullPolicy: IfNotPresent
   tag: "latest"
 
@@ -15,7 +15,7 @@ ingress:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
   hosts:
-    - host: shopmicro.local
+    - host: gamehub.local
       paths:
         - path: /api/users
           pathType: Prefix
@@ -35,7 +35,7 @@ autoscaling:
   targetCPUUtilizationPercentage: 70
 
 env:
-  DATABASE_URL: "postgresql+asyncpg://shopmicro:shopmicro_pass@postgres:5432/user_db"
+  DATABASE_URL: "postgresql+asyncpg://gamehub:gamehub_pass@postgres:5432/user_db"
   OTEL_SERVICE_NAME: "user-service"
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4317"
   DEBUG: "false"

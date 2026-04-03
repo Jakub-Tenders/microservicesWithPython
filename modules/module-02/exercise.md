@@ -8,14 +8,17 @@ A fully layered FastAPI service following DDD structure:
 
 ## Steps
 
-### Step 1: Run the services
+### Step 1: Run user-service locally (no Docker)
 ```bash
 cp .env.example .env
-docker compose -f docker-compose.infra.yml up -d postgres redis
 cd services/user-service
+python -m venv .venv
+source .venv/bin/activate   # or .venv\Scripts\activate on Windows
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8001
 ```
+
+The service uses SQLite by default — no database server needed. A `user_service.db` file will be created automatically.
 
 ### Step 2: Explore the auto-generated API docs
 Open http://localhost:8001/docs
@@ -37,15 +40,26 @@ alembic upgrade head
 pytest tests/ -v
 ```
 
-### Step 5: Extend the product-service
-Add a `GET /v1/products/search?q=<term>` endpoint that searches by name.
+### Step 5: Build the game-service
+Create `services/game-service/` following the same structure as user-service.
 
-**Hint:** Add a new method in `ProductRepository.search()` using SQLAlchemy `ilike`.
+Implement:
+- `POST /v1/games` — add a game to the catalogue
+- `GET /v1/games` — list games
+- `GET /v1/games/{id}` — get by ID
+- `GET /v1/games/search?q=<term>` — search by name
 
-## Capstone Integration
-Once both services pass tests, bring them up together:
+**Hint:** Use SQLAlchemy `ilike` for the search endpoint.
+
+Run it on port 8002:
 ```bash
-docker compose -f docker-compose.infra.yml \
-               -f modules/module-02/docker-compose.override.yml up --build
+cd services/game-service
+uvicorn app.main:app --reload --port 8002
 ```
-Verify Traefik routes at http://localhost:8088
+
+## Verification
+Both services should be running locally and responding:
+```bash
+curl http://localhost:8001/v1/users
+curl http://localhost:8002/v1/games
+```

@@ -1,0 +1,6 @@
+# Module 5: Adds Redis for CQRS read projections
+# Services still run locally with uvicorn + SQLite.
+#
+# Start with:
+#   docker compose -f docker-compose.infra.yml up -d redis rabbitmq zookeeper kafka
+version: "3.9"

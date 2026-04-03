@@ -1,5 +1,10 @@
 # Module 6 Exercise — Security
 
+> This module adds Keycloak infrastructure:
+> ```bash
+> docker compose -f docker-compose.infra.yml up -d keycloak
+> ```
+
 ## Keycloak Setup
 Keycloak is pre-configured by `infra/keycloak/realm-export.json`.
 
@@ -11,8 +16,8 @@ Keycloak is pre-configured by `infra/keycloak/realm-export.json`.
 
 ```bash
 # Resource Owner Password Credentials (testing only — not for production)
-curl -X POST http://localhost:8080/realms/shopmicro/protocol/openid-connect/token \
-  -d "client_id=shopmicro-client" \
+curl -X POST http://localhost:8080/realms/gamehub/protocol/openid-connect/token \
+  -d "client_id=gamehub-client" \
   -d "client_secret=change_me_in_prod" \
   -d "grant_type=password" \
   -d "username=testuser" \
@@ -81,10 +86,10 @@ async def delete_user(...):
 ## Part C: Machine-to-Machine auth (Client Credentials)
 
 ```bash
-curl -X POST http://localhost:8080/realms/shopmicro/protocol/openid-connect/token \
-  -d "client_id=shopmicro-m2m" \
+curl -X POST http://localhost:8080/realms/gamehub/protocol/openid-connect/token \
+  -d "client_id=gamehub-m2m" \
   -d "client_secret=m2m_secret_change_me" \
   -d "grant_type=client_credentials"
 ```
 
-Use this token in order-service when calling user-service internally.
+Use this token in activity-service when calling user-service internally.

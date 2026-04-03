@@ -1,17 +1,17 @@
-name: product-service CI/CD
+name: game-service CI/CD
 
 on:
   push:
     paths:
-      - "services/product-service/**"
-      - ".github/workflows/product-service.yml"
+      - "services/game-service/**"
+      - ".github/workflows/game-service.yml"
   pull_request:
     paths:
-      - "services/product-service/**"
+      - "services/game-service/**"
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/shopmicro-product-service
+  IMAGE_NAME: ${{ github.repository_owner }}/gamehub-game-service
 
 jobs:
   lint:
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: services/product-service
+        working-directory: services/game-service
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: services/product-service
+        working-directory: services/game-service
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -69,7 +69,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
       - uses: docker/build-push-action@v5
         with:
-          context: services/product-service
+          context: services/game-service
           target: runtime
           push: true
           tags: ${{ steps.meta.outputs.tags }}

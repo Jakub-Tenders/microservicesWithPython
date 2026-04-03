@@ -2,10 +2,10 @@
 
 ## Part A: REST (httpx)
 
-The order-service needs to validate that a user exists before creating an order.
+The activity-service needs to validate that a user exists before logging an activity.
 
-### Task 1: Add user validation in order-service
-In `services/order-service/app/main.py`, before creating an order:
+### Task 1: Add user validation in activity-service
+In `services/activity-service/app/main.py`, before creating an activity:
 
 ```python
 import httpx
@@ -21,6 +21,14 @@ async def validate_user_exists(user_id: str) -> bool:
 ```
 
 Add a 404 response if the user doesn't exist.
+
+Run activity-service on port 8003:
+```bash
+cd services/activity-service
+uvicorn app.main:app --reload --port 8003
+```
+
+Make sure user-service is also running on port 8001.
 
 ### Task 2: Add timeout + retry with tenacity
 ```python

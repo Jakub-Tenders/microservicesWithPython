@@ -11,7 +11,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/shopmicro-user-service
+  IMAGE_NAME: ${{ github.repository_owner }}/gamehub-user-service
 
 jobs:
   lint:
@@ -40,8 +40,8 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: shopmicro
-          POSTGRES_PASSWORD: shopmicro_pass
+          POSTGRES_USER: gamehub
+          POSTGRES_PASSWORD: gamehub_pass
           POSTGRES_DB: user_db
         ports:
           - 5432:5432
@@ -59,7 +59,7 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Run tests
         env:
-          DATABASE_URL: postgresql+asyncpg://shopmicro:shopmicro_pass@localhost:5432/user_db
+          DATABASE_URL: postgresql+asyncpg://gamehub:gamehub_pass@localhost:5432/user_db
         run: pytest tests/ -v --tb=short
 
   build-and-push:

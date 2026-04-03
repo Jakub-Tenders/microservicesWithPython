@@ -1,4 +1,4 @@
-# This is where you build ShopMicro.
+# This is where you build GameHub.
 #
 # Each module's exercise.md will tell you exactly what to create here.
 # By the end of the course, this folder will contain all 5 services.
@@ -7,7 +7,7 @@
 #
 # services/
 # ├── user-service/          (Module 2)
-# ├── product-service/       (Module 2)
-# ├── order-service/         (Module 3)
-# ├── inventory-service/     (Module 4)
-# └── notification-service/  (Module 4)
+# ├── game-service/          (Module 2)
+# ├── activity-service/      (Module 3)
+# ├── notification-service/  (Module 4 — Node.js + SQLite, always local)
+# └── logging-service/       (Module 4 — GDPR consent + Kafka consumer)

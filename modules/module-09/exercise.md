@@ -21,7 +21,7 @@ docker compose -f docker-compose.infra.yml \
 # Linux: wget https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64
 
 hey -n 200 -c 10 http://localhost/api/users
-hey -n 200 -c 10 http://localhost/api/products
+hey -n 200 -c 10 http://localhost/api/games
 ```
 
 3. Open Grafana at http://localhost:3000 (admin/admin)
@@ -33,20 +33,20 @@ hey -n 200 -c 10 http://localhost/api/products
 ## Part B: Distributed Tracing with Jaeger
 
 1. Open Jaeger UI at http://localhost:16686
-2. Place an order (which calls user validation):
+2. Log an activity (which calls user validation):
 ```bash
-curl -X POST http://localhost:8003/v1/orders \
+curl -X POST http://localhost:8003/v1/activities \
   -H "Content-Type: application/json" \
-  -d '{"user_id": "...", "items": [{"product_id": "...", ...}]}'
+  -d '{"user_id": "...", "game_id": "...", "action": "played"}'
 ```
-3. Find the trace for `POST /v1/orders` in Jaeger
+3. Find the trace for `POST /v1/activities` in Jaeger
 4. Expand the waterfall — identify which service took the longest
 
 ## Part C: Logs with Loki
 
 In Grafana, go to **Explore → Loki** and query:
 ```
-{service="order-service"} |= "order_id"
+{service="activity-service"} |= "activity_id"
 ```
 
 Correlate a log line timestamp with a trace in Jaeger.
@@ -55,8 +55,8 @@ Correlate a log line timestamp with a trace in Jaeger.
 Add an artificial delay to one endpoint:
 ```python
 import asyncio
-@app.get("/v1/products/slow")
-async def slow_product():
+@app.get("/v1/games/slow")
+async def slow_game():
     await asyncio.sleep(2)  # simulate slow DB query
     return {"result": "slow"}
 ```

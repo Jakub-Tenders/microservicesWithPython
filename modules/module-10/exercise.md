@@ -2,9 +2,9 @@
 
 ## Part A: Circuit Breaker
 
-Add a circuit breaker to the order-service → inventory-service call.
+Add a circuit breaker to the activity-service → logging-service call.
 
-Create `services/order-service/app/infrastructure/circuit_breaker.py`:
+Create `services/activity-service/app/infrastructure/circuit_breaker.py`:
 ```python
 import asyncio
 import time
@@ -54,7 +54,7 @@ class CircuitBreaker:
 
     async def call(self, coro):
         if not self._should_attempt():
-            raise Exception("Circuit breaker OPEN — inventory-service unavailable")
+            raise Exception("Circuit breaker OPEN — logging-service unavailable")
         try:
             result = await coro
             self.record_success()
@@ -64,40 +64,40 @@ class CircuitBreaker:
             raise
 
 
-inventory_circuit_breaker = CircuitBreaker(failure_threshold=5, recovery_timeout=30.0)
+logging_circuit_breaker = CircuitBreaker(failure_threshold=5, recovery_timeout=30.0)
 ```
 
 ### Test it
 ```bash
-# Stop inventory-service
-docker compose stop inventory-service
+# Stop logging-service
+docker compose stop logging-service
 
-# Place 5+ orders — watch circuit open
+# Log 5+ activities — watch circuit open
 for i in $(seq 1 6); do
-  curl -X POST http://localhost:8003/v1/orders -H "Content-Type: application/json" \
-    -d '{"user_id": "u1", "items": [{"product_id": "p1", ...}]}'
+  curl -X POST http://localhost:8003/v1/activities -H "Content-Type: application/json" \
+    -d '{"user_id": "u1", "game_id": "g1", "action": "played"}'
 done
 
-# Restart inventory-service — circuit should recover
-docker compose start inventory-service
+# Restart logging-service — circuit should recover
+docker compose start logging-service
 ```
 
 ## Part B: Redis Caching
 
-Product-service already uses cache-aside. Add cache warming on startup:
+Game-service already uses cache-aside. Add cache warming on startup:
 
 ```python
 async def warm_cache() -> None:
-    """Pre-populate cache with top 100 products on startup."""
+    """Pre-populate cache with top 100 games on startup."""
     async with AsyncSessionFactory() as session:
-        repo = ProductRepository(session)
-        products, _ = await repo.list(limit=100)
+        repo = GameRepository(session)
+        games, _ = await repo.list(limit=100)
     async with Redis.from_url(settings.redis_url) as redis:
-        cache = ProductCache(redis)
-        for product in products:
-            response = ProductResponse.model_validate(product)
-            await cache.set(product.id, response.model_dump())
-    log.info("cache warmed", count=len(products))
+        cache = GameCache(redis)
+        for game in games:
+            response = GameResponse.model_validate(game)
+            await cache.set(game.id, response.model_dump())
+    log.info("cache warmed", count=len(games))
 ```
 
 ## Part C: GitHub Actions CI/CD
@@ -134,18 +134,18 @@ Create `locustfile.py`:
 ```python
 from locust import HttpUser, task, between
 
-class ShopMicroUser(HttpUser):
+class GameHubUser(HttpUser):
     wait_time = between(0.5, 2)
 
     @task(3)
-    def list_products(self):
-        self.client.get("/api/products")
+    def list_games(self):
+        self.client.get("/api/games")
 
     @task(1)
-    def create_order(self):
-        self.client.post("/api/orders", json={
+    def log_activity(self):
+        self.client.post("/api/activities", json={
             "user_id": "test-user-id",
-            "items": [{"product_id": "test-product-id", "product_sku": "TEST-001",
-                       "product_name": "Test Product", "quantity": 1, "unit_price": "9.99"}]
+            "game_id": "test-game-id",
+            "action": "played",
         })
 ```

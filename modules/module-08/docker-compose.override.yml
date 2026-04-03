@@ -1,4 +1,6 @@
-# Module 9: Full stack with observability
+# Module 8: Services containerized + PostgreSQL
+# This is where services move from local SQLite to Docker + PostgreSQL.
+# notification-service stays local (Node.js + SQLite) — never containerized.
 version: "3.9"
 
 services:
@@ -12,9 +14,6 @@ services:
     networks: [gamehub]
     depends_on: { postgres: { condition: service_healthy } }
     labels:
-      traefik.enable: "true"
-      traefik.http.routers.user-service.rule: "PathPrefix(`/api/users`)"
-      traefik.http.routers.user-service.entrypoints: web
       prometheus.scrape: "true"
       prometheus.port: "8001"
       prometheus.path: "/metrics"
@@ -32,9 +31,6 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     labels:
-      traefik.enable: "true"
-      traefik.http.routers.game-service.rule: "PathPrefix(`/api/games`)"
-      traefik.http.routers.game-service.entrypoints: web
       prometheus.scrape: "true"
       prometheus.port: "8002"
       prometheus.path: "/metrics"
@@ -56,9 +52,6 @@ services:
       kafka: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
     labels:
-      traefik.enable: "true"
-      traefik.http.routers.activity-service.rule: "PathPrefix(`/api/activities`)"
-      traefik.http.routers.activity-service.entrypoints: web
       prometheus.scrape: "true"
       prometheus.port: "8003"
       prometheus.path: "/metrics"
@@ -76,9 +69,6 @@ services:
       postgres: { condition: service_healthy }
       kafka: { condition: service_healthy }
     labels:
-      traefik.enable: "true"
-      traefik.http.routers.logging-service.rule: "PathPrefix(`/api/logs`)"
-      traefik.http.routers.logging-service.entrypoints: web
       prometheus.scrape: "true"
       prometheus.port: "8005"
       prometheus.path: "/metrics"
