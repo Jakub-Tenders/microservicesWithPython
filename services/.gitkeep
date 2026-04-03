@@ -1,0 +1,13 @@
+# This is where you build ShopMicro.
+#
+# Each module's exercise.md will tell you exactly what to create here.
+# By the end of the course, this folder will contain all 5 services.
+#
+# Expected final structure:
+#
+# services/
+# ├── user-service/          (Module 2)
+# ├── product-service/       (Module 2)
+# ├── order-service/         (Module 3)
+# ├── inventory-service/     (Module 4)
+# └── notification-service/  (Module 4)

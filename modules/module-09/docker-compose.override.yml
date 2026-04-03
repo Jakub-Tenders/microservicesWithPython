@@ -1,0 +1,99 @@
+# Module 9: Full stack with observability
+version: "3.9"
+
+services:
+  user-service:
+    build: { context: ../../services/user-service, target: runtime }
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-shopmicro}:${POSTGRES_PASSWORD:-shopmicro_pass}@postgres:5432/user_db
+      OTEL_SERVICE_NAME: user-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    ports: ["8001:8001"]
+    networks: [shopmicro]
+    depends_on: { postgres: { condition: service_healthy } }
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.user-service.rule: "PathPrefix(`/api/users`)"
+      traefik.http.routers.user-service.entrypoints: web
+      prometheus.scrape: "true"
+      prometheus.port: "8001"
+      prometheus.path: "/metrics"
+
+  product-service:
+    build: { context: ../../services/product-service, target: runtime }
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-shopmicro}:${POSTGRES_PASSWORD:-shopmicro_pass}@postgres:5432/product_db
+      REDIS_URL: redis://redis:6379
+      OTEL_SERVICE_NAME: product-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    ports: ["8002:8002"]
+    networks: [shopmicro]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.product-service.rule: "PathPrefix(`/api/products`)"
+      traefik.http.routers.product-service.entrypoints: web
+      prometheus.scrape: "true"
+      prometheus.port: "8002"
+      prometheus.path: "/metrics"
+
+  order-service:
+    build: { context: ../../services/order-service, target: runtime }
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-shopmicro}:${POSTGRES_PASSWORD:-shopmicro_pass}@postgres:5432/order_db
+      REDIS_URL: redis://redis:6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      USER_SERVICE_URL: http://user-service:8001
+      PRODUCT_SERVICE_URL: http://product-service:8002
+      OTEL_SERVICE_NAME: order-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    ports: ["8003:8003"]
+    networks: [shopmicro]
+    depends_on:
+      postgres: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.order-service.rule: "PathPrefix(`/api/orders`)"
+      traefik.http.routers.order-service.entrypoints: web
+      prometheus.scrape: "true"
+      prometheus.port: "8003"
+      prometheus.path: "/metrics"
+
+  inventory-service:
+    build: { context: ../../services/inventory-service, target: runtime }
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-shopmicro}:${POSTGRES_PASSWORD:-shopmicro_pass}@postgres:5432/inventory_db
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      OTEL_SERVICE_NAME: inventory-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    ports: ["8004:8004"]
+    networks: [shopmicro]
+    depends_on:
+      postgres: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+    labels:
+      prometheus.scrape: "true"
+      prometheus.port: "8004"
+      prometheus.path: "/metrics"
+
+  notification-service:
+    build: { context: ../../services/notification-service, target: runtime }
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      MONGO_URL: mongodb://mongo:27017
+      OTEL_SERVICE_NAME: notification-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    ports: ["8005:8005"]
+    networks: [shopmicro]
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      mongo: { condition: service_healthy }
+    labels:
+      prometheus.scrape: "true"
+      prometheus.port: "8005"
+      prometheus.path: "/metrics"

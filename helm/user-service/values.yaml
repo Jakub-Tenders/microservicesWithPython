@@ -1,0 +1,46 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/shopmicro/user-service
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 8001
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  hosts:
+    - host: shopmicro.local
+      paths:
+        - path: /api/users
+          pathType: Prefix
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+env:
+  DATABASE_URL: "postgresql+asyncpg://shopmicro:shopmicro_pass@postgres:5432/user_db"
+  OTEL_SERVICE_NAME: "user-service"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4317"
+  DEBUG: "false"
+
+probe:
+  path: /health
+  initialDelaySeconds: 10
+  periodSeconds: 15

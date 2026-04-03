@@ -1,0 +1,55 @@
+{
+  "realm": "shopmicro",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "clients": [
+    {
+      "clientId": "shopmicro-client",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "change_me_in_prod",
+      "redirectUris": ["http://localhost/*"],
+      "webOrigins": ["http://localhost"],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false
+    },
+    {
+      "clientId": "shopmicro-m2m",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "m2m_secret_change_me",
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true
+    }
+  ],
+  "roles": {
+    "realm": [
+      {"name": "customer", "description": "Regular customer"},
+      {"name": "admin", "description": "Store administrator"}
+    ]
+  },
+  "users": [
+    {
+      "username": "testuser",
+      "enabled": true,
+      "email": "testuser@shopmicro.local",
+      "credentials": [{"type": "password", "value": "password", "temporary": false}],
+      "realmRoles": ["customer"]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@shopmicro.local",
+      "credentials": [{"type": "password", "value": "admin", "temporary": false}],
+      "realmRoles": ["admin", "customer"]
+    }
+  ]
+}
