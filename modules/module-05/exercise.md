@@ -1,62 +1,97 @@
-# Module 5 Exercise — Data Management & CQRS
+# Module 5 — Data Management & CQRS
 
-> This module adds Redis infrastructure. Start it alongside messaging:
-> ```bash
-> docker compose -f docker-compose.infra.yml up -d redis
-> ```
+**Duration**: 2h in class
+**Branch to submit**: `module-05/<team-name>`
 
-## CQRS in game-service
+---
 
-The game-service implements the CQRS pattern:
-- **Write side**: SQLite via SQLAlchemy (commands: add game, update game info)
-- **Read side**: Redis projections (queries: game details, search results)
+## Objective
 
-### Task 1: Verify the pattern
-1. Add a game → it writes to SQLite AND Redis
-2. `GET /v1/games/{id}/summary` — served from Redis (fast, denormalized)
-3. `GET /v1/games/{id}` — served from SQLite (authoritative, full data)
+Not all data is the same. Some data needs to be written once and read accurately (a user's account). Other data needs to be read thousands of times per second and can tolerate being slightly stale (a game's summary).
 
-Benchmark the difference:
-```bash
-# Install hey (HTTP load tool)
-# Read model (Redis)
-hey -n 1000 -c 50 http://localhost:8002/v1/games/{id}/summary
+This module introduces two ideas: **CQRS** (separating read and write models) and the **GDPR consent lifecycle** (which forces you to think about what you are even allowed to store).
 
-# Write model (SQLite)
-hey -n 1000 -c 50 http://localhost:8002/v1/games/{id}
-```
+Redis is already running in the infrastructure container.
 
-### Task 2: Event Sourcing exploration
-Instead of storing the current state, store events as the source of truth.
+---
 
-Add a `game_events` table:
+## What's provided
+
+- The `game-service` CQRS scaffolding is in place: SQLite is the write model, Redis is the read model. The cache write logic is implemented — you wire up the read side.
+- The `logging-service` skeleton is provided (Flask, not FastAPI — intentional). The Kafka consumer is scaffolded. You implement the consent endpoints.
+- `logging-service` uses Flask: routes are `@app.route(...)`, no Pydantic, run with `flask run --port 8006`.
+
+---
+
+## Part A — CQRS in game-service *(~40 min)*
+
+When a game is added, it writes to two places:
+- **SQLite** — the authoritative write model
+- **Redis** — a denormalised projection for fast reads
+
+Two endpoints serve the same game differently:
+- `GET /v1/games/{id}` — reads from SQLite (full, accurate data)
+- `GET /v1/games/{id}/summary` — reads from Redis (fast, potentially stale)
+
+Your task: wire up the `/summary` endpoint to read from Redis. The cache key format and the write side are already implemented — find them in `game-service/app/infrastructure/cache.py` and follow the same pattern.
+
+Test the difference by adding a game, then calling both endpoints. Confirm the summary comes back faster (or at all) when SQLite is bypassed.
+
+---
+
+## Part B — GDPR consent lifecycle in logging-service *(~45 min)*
+
+The `logging-service` consumes Kafka events from `activity-service`. Before writing any log entry, it must check that the user has given consent.
+
+Implement the four consent endpoints in `logging-service/app/main.py`:
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/v1/consent/{user_id}` | User opts in to activity logging |
+| GET | `/v1/consent/{user_id}` | Check consent status |
+| DELETE | `/v1/consent/{user_id}` | User withdraws consent |
+| DELETE | `/v1/logs/{user_id}` | GDPR right to erasure — delete all logs for this user |
+
+The Kafka consumer already calls `has_consent(user_id)` before writing — implement that function in the consent model.
+
+Register `logging-service` in the gateway (port 8006). It needs two route entries — one for `consent`, one for `logs` — both pointing to the same service:
+
 ```python
-class GameEvent(Base):
-    __tablename__ = "game_events"
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    game_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
-    event_type: Mapped[str] = mapped_column(String(100), nullable=False)
-    payload: Mapped[str] = mapped_column(Text)  # JSON
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+# gateway/app/config.py
+logging_service_url: str = "http://localhost:8006"
+
+# gateway/app/main.py ROUTES
+"consent": settings.logging_service_url,
+"logs":    settings.logging_service_url,
 ```
 
-Implement `replay_game_state(game_id)` that reconstructs game state from events.
+Test the full flow:
+1. Log an activity — confirm no log is written (no consent yet)
+2. `POST /v1/consent/{user_id}` — opt in
+3. Log another activity — confirm the log appears
+4. `DELETE /v1/consent/{user_id}` — withdraw consent
+5. `DELETE /v1/logs/{user_id}` — erase all logs for that user
 
-### Task 3: Logging-service GDPR consent flow
-Implement the full consent lifecycle in logging-service:
+---
 
-1. `POST /v1/consent/{user_id}` — user opts in to activity logging
-2. `GET /v1/consent/{user_id}` — check consent status
-3. `DELETE /v1/consent/{user_id}` — user withdraws consent
-4. `DELETE /v1/logs/{user_id}` — GDPR right to erasure (delete all logs for user)
+## Discussion *(~15 min)*
 
-The Kafka consumer in logging-service must check consent before writing any log entry.
+- You now have two models for a game's data. What happens if a game's title is updated in SQLite but the Redis projection is not refreshed? Who notices first — the developer or the user?
+- The GDPR consent check is inside `logging-service`, not at the gateway. Why there and not earlier in the chain?
+- What is the difference between CQRS and Event Sourcing? (No implementation needed — just the concept.)
 
-### Task 4: Kafka as event log
-Add a Kafka consumer in game-service that reads `activity.logged` events and
-rebuilds a separate analytics projection (e.g., most-played games in Redis).
+---
 
-## Discussion
-- What is the difference between CQRS and Event Sourcing?
-- When does eventual consistency become a problem for the user experience?
-- How would you handle schema evolution in Kafka events?
+## Minimum to submit this branch
+
+- [ ] `GET /v1/games/{id}/summary` returns data from Redis
+- [ ] All four consent endpoints working and reachable via the gateway
+- [ ] Kafka consumer skips log entries when consent is not given
+- [ ] `logging-service` registered in the gateway under both `consent` and `logs`
+- [ ] `REFLECTION.md` completed and committed
+
+---
+
+## Optional — Event Sourcing
+
+If you finish early, explore the `game_events` table scaffolded in `game-service/app/models.py`. Try implementing `replay_game_state(game_id)` — it reconstructs the current state of a game by replaying all events rather than reading the current row. This is the core idea behind Event Sourcing.

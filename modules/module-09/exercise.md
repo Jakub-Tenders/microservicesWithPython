@@ -14,14 +14,16 @@ docker compose -f docker-compose.infra.yml \
                -f modules/module-09/docker-compose.override.yml up --build
 ```
 
-2. Generate some traffic:
+2. Generate some traffic through the gateway:
 ```bash
 # Install hey
 # macOS: brew install hey
 # Linux: wget https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64
 
-hey -n 200 -c 10 http://localhost/api/users
-hey -n 200 -c 10 http://localhost/api/games
+TOKEN=$(curl -s -X POST http://localhost:8000/v1/auth/token -d "username=testuser&password=password" | jq -r .access_token)
+
+hey -n 200 -c 10 -H "Authorization: Bearer $TOKEN" http://localhost:8000/v1/users
+hey -n 200 -c 10 -H "Authorization: Bearer $TOKEN" http://localhost:8000/v1/games
 ```
 
 3. Open Grafana at http://localhost:3000 (admin/admin)
@@ -33,9 +35,11 @@ hey -n 200 -c 10 http://localhost/api/games
 ## Part B: Distributed Tracing with Jaeger
 
 1. Open Jaeger UI at http://localhost:16686
-2. Log an activity (which calls user validation):
+2. Log an activity through the gateway (which calls user validation internally):
 ```bash
-curl -X POST http://localhost:8003/v1/activities \
+TOKEN=$(curl -s -X POST http://localhost:8000/v1/auth/token -d "username=testuser&password=password" | jq -r .access_token)
+curl -X POST http://localhost:8000/v1/activities \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"user_id": "...", "game_id": "...", "action": "played"}'
 ```

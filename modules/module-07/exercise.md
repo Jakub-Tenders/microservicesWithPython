@@ -1,63 +1,72 @@
-# Module 7 Exercise — API Design & Documentation
+# Module 7 — API Design & Versioning
 
-## Part A: Versioning
-All GameHub services use URL versioning (`/v1/`).
+**Duration**: 2h in class
+**Branch to submit**: `module-07/<team-name>`
 
-### Task: Add v2 endpoint with breaking change
-In game-service, add a `/v2/games` endpoint that returns a flattened response
-(no nesting, camelCase field names) to demonstrate backward-incompatible changes.
+---
 
-Keep `/v1/games` working. Both versions must be documented in OpenAPI.
+## Objective
 
-```python
-@app.get("/v2/games", tags=["v2"])
-async def list_games_v2(...):
-    # Returns camelCase, different shape
-    ...
+APIs are contracts. Once a client depends on a response shape, you cannot change it without breaking them. This module explores what versioning looks like in practice — not in theory — by building a breaking change into a live system and writing tests that prove the contract still holds.
+
+---
+
+## Part A — Add a v2 endpoint with a breaking change *(~40 min)*
+
+In `game-service`, add a `/v2/games` endpoint that returns a **different shape** from `/v1/games`.
+
+The v2 shape uses camelCase keys and no nested objects:
+```json
+{ "gameId": "...", "gameTitle": "...", "platform": "PC", "releaseYear": 2024 }
 ```
 
-## Part B: Generate a Python client SDK
+The v1 shape stays exactly as it is — do not touch it.
+
+Both versions must appear in the OpenAPI docs at `http://localhost:8002/docs`.
+
+Before implementing, answer these two questions for yourself (you will use them in REFLECTION.md):
+- What makes this a *breaking* change? What client code would fail if you applied this shape to `/v1/games`?
+- When is the right moment to bump the major version rather than adding a new optional field?
+
+---
+
+## Part B — Contract tests *(~45 min)*
+
+A contract test does not test business logic — it tests that the API shape has not changed in a way that would break a caller.
+
+Write the three tests below in `modules/module-07/test_contracts.py`. Run them against the gateway (port 8000), not the service directly — this also validates that routing still works end-to-end.
+
+The test file skeleton is provided in `modules/module-07/test_contracts.py`. Fill in the assertions:
+
+1. **`test_v1_games_shape`** — verify the v1 response has `items` (list) and `total` (int)
+2. **`test_v2_games_shape`** — verify the v2 response items have `gameId` and `gameTitle`, and do NOT have `id`
+3. **`test_v1_and_v2_same_count`** — verify both versions return the same number of games
 
 ```bash
-# Install OpenAPI Generator
-npm install @openapitools/openapi-generator-cli -g
-
-# Start game-service
-uvicorn app.main:app --port 8002
-
-# Download spec
-curl http://localhost:8002/openapi.json -o game-service-openapi.json
-
-# Generate Python client
-openapi-generator-cli generate \
-  -i game-service-openapi.json \
-  -g python \
-  -o ./generated-clients/game-client \
-  --additional-properties=packageName=game_client
+pytest modules/module-07/test_contracts.py -v
 ```
 
-## Part C: Contract tests
-Write tests using the generated client against the live service:
+All three tests must pass before you submit the branch.
 
-```python
-import pytest
-from game_client import ApiClient, Configuration, GamesApi
+---
 
-@pytest.fixture
-def api():
-    config = Configuration(host="http://localhost:8002")
-    return GamesApi(ApiClient(config))
+## Discussion *(~20 min)*
 
-def test_list_games_contract(api):
-    games = api.list_games_v1_games_get()
-    assert hasattr(games, 'items')
-    assert hasattr(games, 'total')
-    assert isinstance(games.items, list)
-```
+- URL versioning (`/v1/games`), header versioning (`Accept: application/vnd.gamehub.v2+json`), query param versioning (`?version=2`) — what is different about each? Why does URL versioning win for most teams?
+- Your tests verify the shape. What would you test if you also wanted to verify the gateway routing logic (e.g. that `/v3/games` returns 404)?
+- At what point is it safe to delete `/v1/games`? What signals would tell you?
 
-## Discussion
-- What is the difference between API versioning strategies?
-  - URL path (`/v1/`, `/v2/`)
-  - Request header (`Accept: application/vnd.gamehub.v2+json`)
-  - Query parameter (`?version=2`)
-- When should you bump the major version?
+---
+
+## Minimum to submit this branch
+
+- [ ] `/v2/games` endpoint working and returning camelCase shape
+- [ ] `/v1/games` still returns the original shape, untouched
+- [ ] All 3 contract tests passing against the gateway
+- [ ] `REFLECTION.md` completed and committed
+
+---
+
+## Optional — Version-aware gateway
+
+If you finish early, extend the gateway to reject unsupported versions with a clear error message. Define a `SUPPORTED_VERSIONS` dictionary per resource, and return `404 "v3/games is not supported"` for unknown versions. This centralises version management in one place rather than letting each service handle it.

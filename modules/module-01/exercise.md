@@ -1,60 +1,90 @@
-# Module 1 Exercise — Service Decomposition
+# Module 1 — Service Decomposition
 
-## Scenario: Legacy Gamer Social Monolith
+**Duration**: 2h in class
+**Branch to submit**: `module-01/<team-name>`
 
-You are given a monolithic gamer social platform with the following capabilities bundled together:
-- User registration & authentication
-- Game library management
-- Activity tracking & social feed
-- Push & in-app notifications
-- GDPR-compliant activity logging
-- Reporting & analytics
+---
 
-## Task 1: Identify Bounded Contexts (30 min)
+## Objective
 
-For each bounded context, define:
-1. **Name** — what business domain it represents
-2. **Responsibilities** — what it owns
-3. **Data** — which entities it owns exclusively
-4. **Team ownership** — which team would own this service
+Before writing a single line of code, you need to design the system on paper. Every decision you make here — where to draw service boundaries, who owns what data, how services talk to each other — is hard to reverse once you start coding.
 
-Use the template below:
+This module is about slowing down and thinking like an architect, not a developer.
+
+Read these two documents before doing anything else:
+- `docs/domain.md` — what GameHub is and who uses it
+- `docs/specs.md` — the tech stack and key architectural decisions
+
+> The CTO has already laid out the `services/` folder structure. Use it as a starting point, but your job is to **justify** why each folder deserves to be its own service — not just accept it.
+
+---
+
+## Task 1 — Identify bounded contexts *(~40 min)*
+
+A bounded context is a part of the system that has a clear responsibility and owns its data exclusively. No other service should reach into its database.
+
+For each bounded context you identify, fill in the table:
 
 | Bounded Context | Responsibilities | Owned Entities | Team |
 |---|---|---|---|
-| Identity | ... | User, Session | Platform |
-| Game Library | ... | ... | ... |
-| ... | | | |
+| Identity | Manages who users are, handles registration and profiles | User, Session | Platform |
+| Game Library | *(fill in)* | *(fill in)* | *(fill in)* |
+| *(add more)* | | | |
 
-## Task 2: Define Service Contracts (20 min)
+There is no single correct answer — what matters is that you can justify each row.
+
+---
+
+## Task 2 — Define service contracts *(~30 min)*
 
 For each pair of services that need to communicate, define:
+
 - **Direction**: A → B
-- **Trigger**: what event/action causes the call
-- **Protocol**: REST / gRPC / Event
-- **Payload**: key fields
+- **Trigger**: what causes the call
+- **Protocol**: REST or event (async)
+- **Payload**: key fields exchanged
 
 Example:
 ```
 activity-service → logging-service
-Trigger: Activity logged
-Protocol: Kafka event (async preferred — why?)
+Trigger: an activity is logged
+Protocol: Kafka event (async — why not REST here?)
 Payload: { activity_id, user_id, action, game_id, timestamp }
 ```
 
-## Task 3: GameHub Service Map
+Focus on the flows that feel non-obvious. You do not need to document every possible pair.
 
-Based on the GameHub capstone, draw the final service map:
-- List each service
-- Draw communication arrows (solid = sync, dashed = async)
-- Label each arrow with protocol
+---
 
-Reference the table in the course README for the final answer.
+## Task 3 — Draw the service map *(~20 min)*
 
-## Discussion Questions
+Draw the full GameHub service map:
+- One box per service
+- Arrows between services (solid line = synchronous REST, dashed line = async event)
+- Label each arrow with its protocol
+- One box at the top labelled **gateway** — all client requests enter here, no client ever calls a service directly
 
-1. Why does `notification-service` use Node.js + SQLite instead of Python + PostgreSQL?
-2. What is the risk of `activity-service` calling `logging-service` synchronously?
-3. How does Conway's Law apply to your team structure decisions above?
-4. The CAP theorem says you can't have Consistency + Availability + Partition tolerance simultaneously. For each service in GameHub, which two do you prioritise and why?
-5. Why does the `logging-service` need a GDPR consent check before recording activity?
+This can be a sketch on paper, a whiteboard photo, or ASCII art committed to your branch.
+
+---
+
+## Discussion *(~15 min)*
+
+Three questions to discuss as a team before you leave:
+
+1. Why does `notification-service` use Node.js instead of Python like the rest? What does that tell you about microservices and technology choices?
+2. What is the risk of `activity-service` calling `logging-service` synchronously — why might you prefer an async event instead?
+3. Why does `logging-service` need a GDPR consent check before recording any activity?
+
+You do not need to write these answers down — they are warm-up for your REFLECTION.md.
+
+---
+
+## Minimum to submit this branch
+
+- [ ] Bounded context table filled in (at least 4 services justified)
+- [ ] At least 3 service contracts defined
+- [ ] Service map committed (sketch, photo, or ASCII)
+- [ ] `REFLECTION.md` completed and committed
+
+The map does not need to be perfect. It needs to be yours.

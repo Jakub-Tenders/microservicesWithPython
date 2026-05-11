@@ -1,55 +1,58 @@
-# Module 2 Exercise — FastAPI Service Design
+# Module 2 — FastAPI Service Design
 
-## What you'll build
-A fully layered FastAPI service following DDD structure:
-- Domain layer: SQLAlchemy models
-- Application layer: Pydantic schemas + service class
-- Infrastructure layer: async database + repository
+**Duration**: 2h in class
+**Branch to submit**: `module-02/<team-name>`
 
-## Steps
+---
 
-### Step 1: Run user-service locally (no Docker)
+## Objective
+
+You will build two services: explore the fully-built `user-service` as a reference, then build `game-service` yourself using the same structure. By the end of this module, both services run locally and respond to requests.
+
+The architecture follows Domain-Driven Design (DDD) with three layers:
+- **Domain** — SQLAlchemy models (what the data looks like in the database)
+- **Application** — Pydantic schemas + service class (what the API sends and receives)
+- **Infrastructure** — repository + database session (how data is read and written)
+
+---
+
+## What's provided
+
+`user-service` is fully implemented and documented. Read it before building anything — every file has comments explaining which DDD layer it belongs to and why.
+
+Start it with:
 ```bash
-cp .env.example .env
 cd services/user-service
+cp .env.example .env
 python -m venv .venv
-source .venv/bin/activate   # or .venv\Scripts\activate on Windows
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+alembic upgrade head
 uvicorn app.main:app --reload --port 8001
 ```
 
-The service uses SQLite by default — no database server needed. A `user_service.db` file will be created automatically.
+Open http://localhost:8001/docs and try the endpoints before writing any code.
 
-### Step 2: Explore the auto-generated API docs
-Open http://localhost:8001/docs
+---
 
-Try:
-- POST /v1/users — create a user
-- GET /v1/users — list users
-- GET /v1/users/{id} — get by ID
+## What you need to build
 
-### Step 3: Run Alembic migrations
-```bash
-# Auto-generate from models
-alembic revision --autogenerate -m "create users table"
-alembic upgrade head
-```
+### game-service
 
-### Step 4: Run tests
-```bash
-pytest tests/ -v
-```
+Create `services/game-service/` following the exact same structure as `user-service`.
 
-### Step 5: Build the game-service
-Create `services/game-service/` following the same structure as user-service.
+Your service must expose these four endpoints:
 
-Implement:
-- `POST /v1/games` — add a game to the catalogue
-- `GET /v1/games` — list games
-- `GET /v1/games/{id}` — get by ID
-- `GET /v1/games/search?q=<term>` — search by name
+| Method | Path | Description |
+|---|---|---|
+| POST | `/v1/games` | Add a game to the catalogue |
+| GET | `/v1/games` | List all games |
+| GET | `/v1/games/{id}` | Get a game by ID |
+| GET | `/v1/games/search?q=<term>` | Search games by name |
 
-**Hint:** Use SQLAlchemy `ilike` for the search endpoint.
+**A `Game` has at minimum**: `id`, `title`, `genre`, `platform`, `cover_url`.
+
+For the search endpoint, use SQLAlchemy's `ilike` operator — it does a case-insensitive partial match.
 
 Run it on port 8002:
 ```bash
@@ -57,9 +60,30 @@ cd services/game-service
 uvicorn app.main:app --reload --port 8002
 ```
 
-## Verification
-Both services should be running locally and responding:
+---
+
+## Verify both services are running
+
 ```bash
 curl http://localhost:8001/v1/users
 curl http://localhost:8002/v1/games
 ```
+
+Both should return a valid JSON response (empty list is fine).
+
+Run the tests:
+```bash
+cd services/user-service && pytest tests/ -v
+cd services/game-service && pytest tests/ -v
+```
+
+---
+
+## Minimum to submit this branch
+
+- [ ] `game-service` running on port 8002 with all 4 endpoints working
+- [ ] Alembic migration for the `games` table committed
+- [ ] At least one test passing in `game-service/tests/`
+- [ ] `REFLECTION.md` completed and committed
+
+If you run out of time: the search endpoint is optional. The other three are not.
