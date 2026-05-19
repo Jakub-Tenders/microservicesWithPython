@@ -5,3 +5,6 @@ alembic
 pydantic
 python-dotenv
 aiosqlite
+pytest
+pytest-asyncio
+httpx
