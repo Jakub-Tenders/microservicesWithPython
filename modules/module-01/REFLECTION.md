@@ -22,7 +22,9 @@ You started from a painful monolith. Now you're splitting it into separate servi
 
 Think about it from three angles: the developer who has to change code, the team that has to deploy it, and the user who has to live with its failures. You don't need to cover all three, pick the one that felt most real to you today.
 
-> _Your answer:_
+> For the user it means one service crashing doesn't break everything 
+If logging breaks, you can still use the app 
+In a monolith one bad query and everything breaks
 
 ---
 
@@ -35,6 +37,9 @@ Look at your service map. Every arrow between two services is a decision someone
 What would break, slow down, or become harder to manage if you merged those two services back together?
 
 > _Your answer:_
+We separated User and Game because they change for different reasons
+If we merge them, every change in game logic can impact auth and profiles
+Deployments become riskier and slower because one small fix touches one big service
 
 ---
 
@@ -47,6 +52,9 @@ Microservices solve the monolith's problems. But they create new ones.
 No need to solve it: just name it honestly. This is exactly the tension the rest of the course is about.
 
 > _Your answer:_
+Debugging is harder now because one user action goes through multiple services
+In the monolith I could follow everything in one place
+Now I need logs and traces from different services to find one bug
 
 ---
 

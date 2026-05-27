@@ -6,6 +6,9 @@ pydantic
 pydantic-settings
 python-dotenv
 aiosqlite
+pytest
+pytest-asyncio
+httpx
 asyncpg
 redis
 python-jose[cryptography]

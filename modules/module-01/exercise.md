@@ -29,8 +29,10 @@ For each bounded context you identify, fill in the table:
 | Bounded Context | Responsibilities                                         | Owned Entities | Team        |
 | --------------- | -------------------------------------------------------- | -------------- | ----------- |
 | Identity        | Manages who users are, handles registration and profiles | User, Session  | Platform    |
-| Game Library    | _(fill in)_                                              | _(fill in)_    | _(fill in)_ |
-| _(add more)_    |                                                          |                |             |
+| Game Library    | stores games in a library you can search thru the games  | Game, Genre    | Catalog     |
+| Activity        | Stores users activties like games played or bought       | ActivityLog, Session|             |
+| Notification    | Tracks events and sends notifications to users about them|Notification, Preference| Platform |
+| Logging         | Writes audit logs but only if user accepts GDPR complience | AuditEntry, ConsentRecord| Platform |
 
 There is no single correct answer: what matters is that you can justify each row.
 
@@ -55,6 +57,22 @@ Payload: { activity_id, user_id, action, game_id, timestamp }
 ```
 
 Focus on the flows that feel non-obvious. You do not need to document every possible pair.
+
+'''
+1. gateway → identity-service
+   Trigger: literally every request that comes in
+   Protocol: REST (sync — has to happen before anything else, can't let the request through until we know who's making it)
+   Payload: { token } → { user_id, roles, valid: True/False }
+
+2. activity-service → logging-service
+   Trigger: user does a action (plays a game, adds to wishlist)
+   Protocol: async RabbitMQ event — we chose async here because if logging is slow or down, we don't want that to freeze up the activity feed.
+   Payload: { activity_id, user_id, game_id, action, timestamp }
+
+3. activity-service → notification-service
+   Trigger: user does a action (plays a game)
+   Protocol: async RabbitMQ (notifications can be slightly delayed will make no impact on the quality of the service)
+   Payload: { user_id, action, game_id, timestamp }
 
 ---
 

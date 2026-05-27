@@ -19,6 +19,9 @@ You built a service with distinct layers: models, schemas, repository, service, 
 Think about what happens six months later when someone new joins the team, or when you need to swap SQLite for PostgreSQL. What does the layered structure protect you from?
 
 > *Your answer:*
+Because after some time one big file becomes unreadable
+With layers each part has one job so changes are safer
+If we move from SQLite to PostgreSQL we mostly change repository and config, not everything
 
 ---
 
@@ -31,6 +34,9 @@ Each service owns its data exclusively — no other service is allowed to touch 
 Give a concrete scenario, not a general principle.
 
 > *Your answer:*
+Game service owns the Game table
+If another service writes directly, it can create invalid game states like negative scores or wrong status
+Then API responses become inconsistent and bugs are hard to trace
 
 ---
 
@@ -43,6 +49,9 @@ You now have models, schemas, a repository, a service, and routes — five layer
 And at what point does the complexity start to pay off? Where is the tipping point?
 
 > *Your answer:*
+For a small project the cost is more files and more boilerplate
+It feels slower at first for simple CRUD
+It starts paying off when features grow and more people work on the same service
 
 ---
 
