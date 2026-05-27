@@ -20,6 +20,8 @@ Think about what the client would need to know and manage if it talked to each s
 
 > *Your answer:*
 
+Without the gateway, the frontend would have to go thru a messy list of different ports for every single service, meaning any minor backend tweak would immediately break the client. Routing everything through localhost:8000 keeps life simple: the frontend only needs to know one address
+
 ---
 
 ## 2. Your choice
@@ -31,7 +33,7 @@ The activity-service makes two outbound calls: one to validate the user (with re
 What is the consequence for the user in each case if the downstream service is unavailable?
 
 > *Your answer:*
-
+An activity must belong to a real user, so that validation call is critical and worth retrying to avoid saving corrupt data the activity can still be valid even if game-service is down. "game": null is better than failing the whole request. The user can still log the activity.
 ---
 
 ## 3. The tradeoff
@@ -43,6 +45,7 @@ Every time a client creates an activity, three services are involved synchronous
 What happens to the user experience if the slowest service in the chain takes 3 seconds to respond?
 
 > *Your answer:*
+The risk is a domino effect: you're only as strong (and as fast) as your weakest link. If one service goes down, the whole request fails.
 
 ---
 
