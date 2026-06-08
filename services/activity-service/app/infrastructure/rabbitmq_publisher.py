@@ -22,6 +22,7 @@ import logging
 import aio_pika
 
 from app.config import settings
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ async def publish_activity_event(
     user_id: str,
     game_id: str,
     action: str,
-    game_title: str | None = None,
+    game_title: Optional[str] = None,
 ) -> None:
     """
     Publish an activity event to RabbitMQ.

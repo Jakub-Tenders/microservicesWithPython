@@ -18,7 +18,9 @@ In Module 3, services called each other directly over HTTP. Now activity-service
 
 Think about what happens under load, or when notification-service is temporarily down.
 
-> *Your answer:*
+> *Activity-service gets a major speed boost, it logs the event and finishes instantly without caring if other services are down. Notification-service gets protection from crashing, if traffic spikes, RabbitMQ holds the extra messages so the service can process them safely one by one later.*
+
+
 
 ---
 
@@ -30,7 +32,7 @@ In Module 3 you already knew how to call another service directly over HTTP — 
 
 Think about what happens if notification-service is slow, or crashes mid-message.
 
-> *Your answer:*
+> *Unlike user or game lookups, creating an activity doesn't need a notification to finish first. A broker prevents chain-reaction failures.*
 
 ---
 
@@ -42,7 +44,7 @@ With synchronous REST, you get an immediate answer: success or failure. With asy
 
 What visibility do you lose when you go async?
 
-> *Your answer:*
+> *A user only knows because they never see the final alert show up. A developer loses the instant HTTP response code.*
 
 ---
 
