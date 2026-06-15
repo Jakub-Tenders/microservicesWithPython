@@ -12,9 +12,17 @@
 from sqlalchemy.orm import Session
 from app import repository
 from app.schemas import GameCreate, GameOut, GameList
+from app.infrastructure.cache import get_game_summary
 
 def add_game(db: Session, data: GameCreate) -> GameOut:
     game = repository.create_game(db, data)
+    get_game_summary(game.id, {
+        "id": game.id,
+        "title": game.title,
+        "genre": game.genre,
+        "platform": game.platform,
+        "cover_url": game.cover_url,
+    })
     return GameOut.model_validate(game)
 
 def fetch_game(db: Session, game_id: str) -> GameOut:
@@ -26,24 +34,13 @@ def fetch_game(db: Session, game_id: str) -> GameOut:
 def fetch_all_games(db: Session, limit: int = 20, offset: int = 0) -> GameList:
     games, total = repository.list_games(db, limit=limit, offset=offset)
     return GameList(
-        items=[GameOut.model_validate(game) for game in games],
-        total=total,
-        limit=limit,
-        offset=offset,
+        items=[GameOut.model_validate(g) for g in games],
+        total=total, limit=limit, offset=offset,
     )
 
 def find_games(db: Session, q: str, limit: int = 20, offset: int = 0) -> GameList:
     games, total = repository.search_games(db, q=q, limit=limit, offset=offset)
     return GameList(
-        items=[GameOut.model_validate(game) for game in games],
-        total=total,
-        limit=limit,
-        offset=offset,
+        items=[GameOut.model_validate(g) for g in games],
+        total=total, limit=limit, offset=offset,
     )
-#
-# Module 5 — CQRS:
-# In add_game(), after saving to the DB, also write to the Redis cache:
-#   from app.infrastructure.cache import set_game_summary
-#   set_game_summary(game.id, {"id": game.id, "title": game.title,
-#                               "genre": game.genre, "platform": game.platform,
-#                               "cover_url": game.cover_url})
