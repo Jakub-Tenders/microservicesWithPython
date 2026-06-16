@@ -10,11 +10,13 @@
 # If /{game_id} comes first, FastAPI will try to match "search" as an ID
 # and return a 422 Unprocessable Entity error.
 
+from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import service, schemas
 from app.infrastructure.cache import get_game_summary
+from app.security import require_admin
 
 router = APIRouter(prefix="/v1/games", tags=["games"])
 
@@ -43,3 +45,14 @@ def get_game(game_id: str, db: Session = Depends(get_db)):
         return service.fetch_game(db, game_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+# Added in Module 6 — require_admin checks that the JWT role == "admin".
+# A gamer gets 403 Forbidden; an admin gets through.
+@router.delete("/{game_id}", dependencies=[Depends(require_admin)])
+def delete_game(game_id: str, db: Session = Depends(get_db)):
+    try:
+        service.fetch_game(db, game_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    service.remove_game(db, game_id)
+    return {"deleted": game_id}

@@ -9,14 +9,16 @@
 # - fetch_all_games(db, limit, offset) -> GameList
 # - find_games(db, q, limit, offset) -> GameList   (delegates to search_games in repository)
 
+from __future__ import annotations
 from sqlalchemy.orm import Session
 from app import repository
 from app.schemas import GameCreate, GameOut, GameList
-from app.infrastructure.cache import get_game_summary
+from app.infrastructure.cache import set_game_summary
 
 def add_game(db: Session, data: GameCreate) -> GameOut:
     game = repository.create_game(db, data)
-    get_game_summary(game.id, {
+    # Write the Redis projection right after the DB write (CQRS write side)
+    set_game_summary(game.id, {
         "id": game.id,
         "title": game.title,
         "genre": game.genre,
@@ -44,3 +46,7 @@ def find_games(db: Session, q: str, limit: int = 20, offset: int = 0) -> GameLis
         items=[GameOut.model_validate(g) for g in games],
         total=total, limit=limit, offset=offset,
     )
+
+def remove_game(db: Session, game_id: str) -> None:
+    # Added in Module 6 — used by the admin-only DELETE endpoint
+    repository.delete_game(db, game_id)

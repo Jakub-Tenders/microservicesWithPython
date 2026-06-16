@@ -9,6 +9,7 @@
 # It must match the SECRET_KEY in auth-service — that's how game-service can
 # verify a token without ever calling auth-service.
 
+from __future__ import annotations
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt

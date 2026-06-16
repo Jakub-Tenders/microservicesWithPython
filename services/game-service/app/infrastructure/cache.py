@@ -8,6 +8,7 @@
 # Read side (get_game_summary): YOUR TASK — implement it, then add the
 #   GET /v1/games/{game_id}/summary endpoint in routes.py that calls it.
 
+from __future__ import annotations
 import json
 import os
 

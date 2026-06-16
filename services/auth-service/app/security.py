@@ -32,7 +32,10 @@ def create_access_token(data: dict) -> str:
 
     Once this works, paste the token at https://jwt.io and verify the claims.
     """
-    raise NotImplementedError("implement create_access_token")
+    payload = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    payload["exp"] = expire
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
 
 async def get_current_user(
@@ -65,4 +68,15 @@ async def get_current_user(
     After implementing both functions, test with:
         GET /v1/auth/me  →  should return your token's payload
     """
-    raise NotImplementedError("implement get_current_user")
+    try:
+        payload = jwt.decode(
+            credentials.credentials,
+            settings.secret_key,
+            algorithms=[settings.algorithm],
+        )
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
+    return payload

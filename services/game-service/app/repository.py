@@ -9,6 +9,7 @@
 # - search_games(db, q, limit, offset) -> tuple[list[Game], int]
 #   Hint: filter by title using .ilike(f"%{q}%") for case-insensitive search
 
+from __future__ import annotations
 from sqlalchemy.orm import Session
 from typing import Optional
 
@@ -41,3 +42,8 @@ def search_games(db: Session, q: str, limit: int = 20, offset: int = 0) -> tuple
     total = query.count()
     games = query.offset(offset).limit(limit).all()
     return games, total
+
+def delete_game(db: Session, game_id: str) -> None:
+    # Added in Module 6 — called by service.remove_game (admin-only DELETE)
+    db.query(Game).filter(Game.id == game_id).delete()
+    db.commit()
